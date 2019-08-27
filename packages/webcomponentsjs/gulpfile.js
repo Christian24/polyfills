@@ -51,7 +51,7 @@ function debugify(sourceName, fileName, extraRollupOptions) {
   .pipe(gulp.dest(outDir))
 }
 
-function closurify(sourceName, fileName) {
+function closurify(sourceName, fileName, addPlatform) {
   const outDir = fileName ? '.' : './bundles';
   const smPrefix = fileName ? '' : '../';
 
@@ -81,14 +81,21 @@ function closurify(sourceName, fileName) {
     ]
   };
 
-  return gulp.src([
-      'src/**/*.js',
-      'node_modules/get-own-property-symbols/build/get-own-property-symbols.max.js',
-      'node_modules/promise-polyfill/src/**/*.js',
-      'node_modules/@webcomponents/**/*.js',
-      '!node_modules/@webcomponents/*/externs/*.js',
-      '!node_modules/@webcomponents/*/node_modules/**'
-    ], {base: './', follow: true})
+  let  sources = ['src/**/*.js']
+  if (addPlatform) {
+    sources = [
+    ...sources, 
+    'node_modules/get-own-property-symbols/build/get-own-property-symbols.max.js',
+    'node_modules/promise-polyfill/src/**/*.js'];
+  }
+  sources = [
+    ...sources,
+    'node_modules/@webcomponents/**/*.js',
+    '!node_modules/@webcomponents/*/externs/*.js',
+    '!node_modules/@webcomponents/*/node_modules/**'
+   ];
+
+  return gulp.src(sources, {base: './', follow: true})
   .pipe(sourcemaps.init())
   .pipe(closure(closureOptions))
   .pipe(sourcesContent())
@@ -131,23 +138,27 @@ gulp.task('debugify-bundle', () => {
 })
 
 gulp.task('closurify-ce', () => {
-  return closurify('webcomponents-ce')
+  return closurify('webcomponents-ce', true)
 });
 
 gulp.task('closurify-sd-ce-pf', () => {
-  return closurify('webcomponents-sd-ce-pf')
+  return closurify('webcomponents-sd-ce-pf', true)
 });
 
 gulp.task('closurify-sd-ce', () => {
-  return closurify('webcomponents-sd-ce')
+  return closurify('webcomponents-sd-ce', true)
 });
 
 gulp.task('closurify-sd', () => {
-  return closurify('webcomponents-sd')
+  return closurify('webcomponents-sd', true)
 });
 
 gulp.task('closurify-bundle', () => {
-  return closurify('webcomponents-bundle', 'webcomponents-bundle');
+  return closurify('webcomponents-bundle', 'webcomponents-bundle', true);
+});
+
+gulp.task('closurify-bundle-no-platform', () => {
+  return closurify('webcomponents-bundle-no-platform', 'webcomponents-bundle-no-platform', false);
 });
 
 gulp.task('debugify-ce-es5-adapter', () => {
@@ -191,6 +202,7 @@ gulp.task('closure', gulp.series([
   'closurify-sd-ce',
   'closurify-sd-ce-pf',
   'closurify-bundle',
+  'closurify-bundle-no-platform',
   'debugify-ce-es5-adapter'
 ]));
 
